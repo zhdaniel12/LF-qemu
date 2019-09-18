@@ -518,13 +518,13 @@ static void aspeed_soc_realize(DeviceState *dev, Error **errp)
     sysbus_connect_irq(SYS_BUS_DEVICE(&s->adc), 0,
                        aspeed_soc_get_irq(s, ASPEED_ADC));
 
-    /* UART - attach an 8250 to the IO space as our UART5 */
+    /* UART - attach an 8250 to the IO space as our UART1 */
     if (serial_hd(0)) {
-        qemu_irq uart5 = aspeed_soc_get_irq(s, ASPEED_UART5);
-        serial_mm_init(get_system_memory(), sc->info->memmap[ASPEED_UART5], 2,
+        qemu_irq uart5 = aspeed_soc_get_irq(s, ASPEED_UART1);
+        serial_mm_init(get_system_memory(), sc->info->memmap[ASPEED_UART1], 2,
                        uart5, 38400, serial_hd(0), DEVICE_LITTLE_ENDIAN);
     }
-
+#if 0
     /* VUART */
     if (serial_hd(1)) {
         qemu_irq vuart = qdev_get_gpio_in(DEVICE(&s->vic), 8);
@@ -538,7 +538,7 @@ static void aspeed_soc_realize(DeviceState *dev, Error **errp)
         serial_mm_init(get_system_memory(), sc->info->memmap[ASPEED_UART1], 2,
                        uart1, 38400, serial_hd(2), DEVICE_LITTLE_ENDIAN);
     }
-
+#endif
     /* I2C */
     object_property_set_bool(OBJECT(&s->i2c), true, "realized", &err);
     if (err) {
