@@ -59,6 +59,7 @@ struct AspeedBoardState {
         SCU_AST2500_HW_STRAP_GPIO_STRAP_ENABLE |                        \
         SCU_AST2500_HW_STRAP_UART_DEBUG |                               \
         SCU_AST2500_HW_STRAP_DDR4_ENABLE |                              \
+        SCU_HW_STRAP_SPI_MODE(SCU_HW_STRAP_SPI_MASTER) |                \
         SCU_HW_STRAP_MAC1_RGMII |                                       \
         SCU_HW_STRAP_MAC0_RGMII) &                                      \
         ~SCU_HW_STRAP_2ND_BOOT_WDT)
@@ -228,6 +229,7 @@ static void aspeed_board_init(MachineState *machine,
     AspeedBoardState *bmc;
     AspeedSoCClass *sc;
     DriveInfo *drive0 = drive_get(IF_MTD, 0, 0);
+    DriveInfo *drive1 = drive_get(IF_MTD, 0, 1);
     ram_addr_t max_ram_size;
 
     bmc = g_new0(AspeedBoardState, 1);
@@ -308,6 +310,17 @@ static void aspeed_board_init(MachineState *machine,
                                         boot_rom);
             write_boot_rom(drive0, FIRMWARE_ADDR, fl->size, &error_abort);
         }
+    }
+
+    if (drive1) {
+        printf("Initing drive1\n");
+        AspeedSMCFlash *fl = &bmc->soc.fmc.flashes[0];
+        MemoryRegion *fake_fmc_cs1 = g_new(MemoryRegion, 1);
+        memory_region_init_rom(fake_fmc_cs1, OBJECT(bmc), "aspeed.fake_fmc_cs1",
+                               fl->size, &error_abort);
+        memory_region_add_subregion(get_system_memory(), 0x28000000,
+                                    fake_fmc_cs1);
+        write_boot_rom(drive1, 0x28000000, fl->size, &error_abort);
     }
 
     aspeed_board_binfo.kernel_filename = machine->kernel_filename;
@@ -519,7 +532,7 @@ static const AspeedBoardConfig aspeed_boards[] = {
  //       .fmc_model = "w25q256",
         .fmc_model = "mx25l25635e",
         .spi_model = "mx25l25635e",
-        .num_cs    = 1,
+        .num_cs    = 2,
         .i2c_init  = ast2500_evb_i2c_init,
         .ram       = 512 * MiB,
     }, {
